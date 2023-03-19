@@ -129,6 +129,9 @@ Localization files, Font files, and other stuff as well. This repository already
 lot of code to handle a good part of them. Still, if possible, I would like to release
 specific tools to address each one of them and the relative documentation.
 
+#### *Small Update*
+*I've published some of the tools I used for the undub together with an initial documentation for some game formats here: [https://github.com/karas84/ProjectZeroTools](https://github.com/karas84/ProjectZeroTools).*
+
 ## Usage
 
 The program comes as both a python3 command-line tool (with very few dependencies) or as a tkinter GUI.
