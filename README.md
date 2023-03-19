@@ -1,9 +1,11 @@
 # ProjectZero Undub
+
 Undub project for Tecmo's Project Zero - the EU version (the first one) for the PS2.
 
 ![Undub Process](docs/undub.gif)
 
 ## Why?
+
 I first played Project Zero in 2010 and fell in love with everything about the game ...
 well, everything except the English audio. I soon started making my own undubbed version
 by merging the Japanese release (Zero) with the European one. At the time, it was an
@@ -12,6 +14,7 @@ the game data, and transcribing the game audio from FMVs, and cutscenes. It was 
 and I can safely say that I learned a lot from that experience.
 
 ## So, why now?
+
 By chance, I stumbled on [wagrenier's GitHub page](https://github.com/wagrenier/ZeroUndub)
 of the very same project more than 10 years later. That made me remember the good old
 times, and I suddenly felt the urge to rewrite my old and ugly C code into modern python,
@@ -21,6 +24,7 @@ required a not so easy to find program to be converted into an ISO image. Luckil
 are a lot better now!
 
 ## What can it do?
+
 With this code, it's possible to merge the European and Japanese versions of the game into
 an undubbed European version. That is a European version but with all the audio / voices /
 FMVs taken from the Japanese one. The original game was localized into 5 languages: English,
@@ -44,9 +48,10 @@ dummy texts with the whole 271 English subtitles, and rebuild it into a perfectl
 English localization.
 
 ## Features
+
 The idea of unpacking and re-constructing is a crucial aspect of this tool. This first
 iteration of the Project Zero franchise packs all game-related files (except for FMVs) into
-a huge 1.2GB binary file (IMG_BD.BIN). The file is accompanied by a small file (IMG_HD.BIN)
+a huge 1.2GB binary file (IMG*BD.BIN). The file is accompanied by a small file (IMG_HD.BIN)
 that serves as table of contents. From what I understand, the standard undubbing procedure
 consists in replacing the specific bytes of each content to undub into the ISO at the correct
 position. For example, to replace the English localization, one would need to find the exact
@@ -67,20 +72,22 @@ timing problems. The only effect is the reduction in size of the resulting IMG_B
 by aligning the files to LBAs just multiple of 2048, it is possible to save around 30MB, which
 is plenty enough to compensate for the extra few kB of the English localization and the
 difference in size that some Japanese audio files have with respect to the equivalent
-English ones. This method effectively removes *any* limitation to what can be injected into
+English ones. This method effectively removes \_any* limitation to what can be injected into
 the European version! So, contrary to other tools, this one does not need to sacrifice anything
 in the original game, say a non-English language containing all 271 subtitles, to accommodate
 the extra English subtitles. This results in a clean undubbed ISO where all the languages are
 fully functional!
 
 ### In summary:
-* The main ELF is patched to show the English subtitles
-* English subtitles have been transcribed and injected into the English localization
-* FMVs (both PAL and NTSC) have been remuxed with the Japanese audio track
-* All other languages are left unchanged and functional
-* The ELF can be further patched to add extra nice features! (see below)
+
+- The main ELF is patched to show the English subtitles
+- English subtitles have been transcribed and injected into the English localization
+- FMVs (both PAL and NTSC) have been remuxed with the Japanese audio track
+- All other languages are left unchanged and functional
+- The ELF can be further patched to add extra nice features! (see below)
 
 ### Extra features:
+
 Usually, the game asks to choose a language only the first time, when no save data is
 present. The following times the game starts in the previous language, forcing anyone
 who would like to change the language to start the game without the memory card inserted. The
@@ -98,20 +105,22 @@ and later ported to Linux ([PS2_Pnacher](https://github.com/Snaggly/PS2_Pnacher)
 [Snaggly](https://github.com/Snaggly), it is possible to patch the ELF to incorporate some
 of these patches. Obviously, I decided to include the relevant bits into the game ELF,
 allowing to:
-* Enable 16:9 aspect ratio in-game
-* Enable 19:9 aspect ratio in FMVs via adding black borders instead of stretching (strongly
-suggested if the 19:9 in-game patch is enabled, but the user is free to leave them stretched
-if against the pillarbox effect)
-* Remove in-game bloom effect
-* Remove in-game dark filter
-* Remove in-game noise effect
-* Remove main menu noise effect
+
+- Enable 16:9 aspect ratio in-game
+- Enable 19:9 aspect ratio in FMVs via adding black borders instead of stretching (strongly
+  suggested if the 19:9 in-game patch is enabled, but the user is free to leave them stretched
+  if against the pillarbox effect)
+- Remove in-game bloom effect
+- Remove in-game dark filter
+- Remove in-game noise effect
+- Remove main menu noise effect
 
 All the above community patches are optional, and the choice of which to enable is left
-to the user of this software (althoug I recommend enabling them all, except for the main menu
+to the user of this software (although I recommend enabling them all, except for the main menu
 noise effect which I actually prefer to leave it enabled).
 
 ## What's next?
+
 During the complete rewrite of my old code, I rediscovered a lot of stuff about the game
 files and their format. With a bit of effort, this information can be found on the internet,
 but there is not a centralized source for it all. With time, I would like to create a small
@@ -121,27 +130,41 @@ lot of code to handle a good part of them. Still, if possible, I would like to r
 specific tools to address each one of them and the relative documentation.
 
 ## Usage
-The program comes as a python3 command-line tool with very few dependencies. To run it,
-you will need:
-* A European Project Zero (SLES508.21) ISO image dumped from your own original copy of the game
-* A Japanese Zero (SLPS250.74) ISO image dumped from your own original copy of the game
-* Python 3.7 or newer
+
+The program comes as both a python3 command-line tool (with very few dependencies) or as a tkinter GUI.
+To run it, you will need:
+
+- A European Project Zero (SLES508.21) ISO image dumped from your own original copy of the game
+- A Japanese Zero (SLPS250.74) ISO image dumped from your own original copy of the game
+- Python 3.7 or newer
 
 The program has been developed on Linux, but it also works on Windows if both python
 and the needed dependencies are correctly installed (both natively or on WSL, although in
 the first versions of WSL the disk access is quite slower than the native one and the
 undubbing process may require more time to complete).
 
-The program does not come with a GUI but has a simple command-line interface (CLI) that
-accepts 3 mandatory arguments:
-* The path to the European ISO
-* The path to the Japanese ISO
-* The output path for the undubbed ISO
+### Command Line Interface (CLI)
+
+The command-line interface (CLI) can be launched using the `undub.py` file. It accepts 3
+mandatory arguments:
+
+- The path to the European ISO
+- The path to the Japanese ISO
+- The output path for the undubbed ISO
 
 Additionally, several flags can be specified to patch the ELF with extra features. Please
 refer to the program's help for further details.
 
+### Graphical User Interface (GUI)
+
+The graphical user interface (GUI) can be launched using the `undub_gui.py` file. It is
+built upon the tkinter library, which should be installed manually (but often comes
+preinstalled with python3).
+
+Instructions on how to preform the undub are shown in the "Info" section of the GUI.
+
 ## Copyright Disclaimer
+
 This tool is supposed to be used with ISO files obtained from your own legally owned copies
 of the games (both European and Japanese versions). I do not condone piracy and strongly
 believe that game developers MUST be supported. It is for this precise reason that this
@@ -153,6 +176,7 @@ This way, only by using the original ISO file, the subtitles can be reconstructe
 injected into the final ISO.
 
 ## Final Notes
+
 I've tested the undubbed version on both PCSX2 and my own PS2. I've played it through
 various spots using several save files and never encountered a problem. This does not
 mean that there are no bugs, so if you find anything, please submit an issue here, and
@@ -165,20 +189,22 @@ trace back the undubbed game to me. What you get is an exact copy of the Europea
 but with Japanese audio.
 
 ## Acknowledgements
+
 This tool would not exist if it wasn't for the hard work of many individuals, to whom
 I'd like to give my thanks:
-* First, [wagrenier](https://github.com/wagrenier), for his
-[ZeroUndub](https://github.com/wagrenier/ZeroUndub) project, who inspired me again
-to work on this software
-* [wagrenier](https://github.com/wagrenier) again, for his excellent python version of
-[PssMux](https://github.com/wagrenier/PssMux), which makes this tool able to automatically
-undub all FMVs in the game!
-* [pgert](http://forums.pcsx2.net/Thread-PCSX2-Widescreen-Game-Patches?pid=240786#pid240786)
-and the whole [PCSX2 community](https://forums.pcsx2.net/) for the great patches that can
-be injected into the game
-* [pelvicthrustman](https://www.psx-place.com/threads/ps2-patch-engine-by-pelvicthrustman.19167/)
-and [Snaggly](https://github.com/Snaggly) for their tools to inject patches into the ELF
-* All the guys out there on so many forums I've lost track of, that released bits of
-information about many game file formats
-* Finally, to 2010 me, who painstakingly spent weeks building his own undub, reversed-engineered
-the game data and transcribed all FMVs and cutscenes
+
+- First, [wagrenier](https://github.com/wagrenier), for his
+  [ZeroUndub](https://github.com/wagrenier/ZeroUndub) project, who inspired me again
+  to work on this software
+- [wagrenier](https://github.com/wagrenier) again, for his excellent python version of
+  [PssMux](https://github.com/wagrenier/PssMux), which makes this tool able to automatically
+  undub all FMVs in the game!
+- [pgert](http://forums.pcsx2.net/Thread-PCSX2-Widescreen-Game-Patches?pid=240786#pid240786)
+  and the whole [PCSX2 community](https://forums.pcsx2.net/) for the great patches that can
+  be injected into the game
+- [pelvicthrustman](https://www.psx-place.com/threads/ps2-patch-engine-by-pelvicthrustman.19167/)
+  and [Snaggly](https://github.com/Snaggly) for their tools to inject patches into the ELF
+- All the guys out there on so many forums I've lost track of, that released bits of
+  information about many game file formats
+- Finally, to 2010 me, who painstakingly spent weeks building his own undub, reversed-engineered
+  the game data and transcribed all FMVs and cutscenes

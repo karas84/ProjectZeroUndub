@@ -4,18 +4,26 @@ from contextlib import contextmanager
 
 
 class AbstractAdapter(ABC):
+    @abstractmethod
+    def test_file(self, file_path: str) -> bool:
+        ...
 
     @abstractmethod
-    def test_file(self, file_path: str) -> bool: ...
+    def read_file(self, file_name: str, size=-1, offset=0) -> bytes:
+        ...
+
     @abstractmethod
-    def read_file(self, file_name: str, size=-1, offset=0) -> bytes: ...
+    def get_img_bd_size(self) -> int:
+        ...
+
     @abstractmethod
-    def get_img_db_size(self) -> int: ...
-    @abstractmethod
-    def find_file(self, file_name: str) -> str: ...
+    def find_file(self, file_name: str) -> str:
+        ...
+
     @contextmanager
     @abstractmethod
-    def open(self, file_name: str) -> BytesIO: ...
+    def open(self, file_name: str) -> BytesIO:
+        ...
 
     def __init__(self, load_path: str):
         self._init_called = True
@@ -27,9 +35,9 @@ class AbstractAdapter(ABC):
         self.img_bd_path = None
 
     def setup(self):
-        if not getattr(self, '_init_called', False):
-            raise RuntimeError('must call __init__ of super class')
+        if not getattr(self, "_init_called", False):
+            raise RuntimeError("must call __init__ of super class")
 
-        self.elf_path = self.find_file('SLES_508.21') or self.find_file('SLPS_250.74')
-        self.img_hd_path = self.find_file('IMG_HD.BIN')
-        self.img_bd_path = self.find_file('IMG_BD.BIN')
+        self.elf_path = self.find_file("SLES_508.21") or self.find_file("SLPS_250.74")
+        self.img_hd_path = self.find_file("IMG_HD.BIN")
+        self.img_bd_path = self.find_file("IMG_BD.BIN")

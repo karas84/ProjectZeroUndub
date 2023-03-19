@@ -1,7 +1,7 @@
 from .utils import make_table
 
 
-_font_01 = '''
+_font_01 = """
  ABCDEFGHIJKLMNOPQRST
 UVWXYZabcdefghijklmno
 pqrstuvwxyz0123456789
@@ -12,10 +12,10 @@ pqrstuvwxyz0123456789
 ;:,.!「」✓✗{pts}âç°#◯‷=ö#{○}{✕}
 {△}{□}壱弐参肆伍陸漆捌玖œ#########
 #####################
-'''
+"""
 
 
-_font_02 = '''
+_font_02 = """
  ABCDEFGHIJKLMNOPQRST
 UVWXYZabcdefghijklmno
 pqrstuvwxyz0123456789
@@ -26,10 +26,10 @@ pqrstuvwxyz0123456789
 ;:,.!「」✓✗{pts}âç°#◯‷=ö#{○}{✕}
 {△}{□}#########œ#########
 #####################
-'''
+"""
 
 
-_font_03 = '''
+_font_03 = """
  ABCDEFGHIJKLMNOPQRST
 UVWXYZabcdefghijklmno
 pqrstuvwxyz0123456789
@@ -40,16 +40,16 @@ pqrstuvwxyz0123456789
 #####################
 #####################
 #####################
-'''
+"""
 
-from .japanese import _font_04
+from .japanese import _font_04  # noqa: E402 # pylint: disable=wrong-import-position
 
 
-from .japanese import _font_05
+from .japanese import _font_05  # noqa: E402 # pylint: disable=wrong-import-position
 
 
 table_eu = {
-    'default': make_table(_font_01),
+    "default": make_table(_font_01),
     0xF0: make_table(_font_02),
     0xF1: make_table(_font_03),
     0xF2: make_table(_font_04),

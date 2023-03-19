@@ -4,7 +4,7 @@ import re
 import struct
 
 from abc import ABC, abstractmethod
-from typing import List, Union, BinaryIO, Tuple
+from typing import BinaryIO
 
 from .tables.subtitles import decode_english_subtitles
 from .tables import table_eu, table_jp, LASTCH, COLOR, NEWLINE
@@ -12,35 +12,36 @@ from .tables import table_eu, table_jp, LASTCH, COLOR, NEWLINE
 
 class Serializable(ABC):
     @abstractmethod
-    def encode(self, offset=0): ...
+    def encode(self, offset=0):
+        ...
 
 
 class InGameMessageTable(Serializable):
-
-    def __init__(self,
-                 number: int,
-                 offset: int,
-                 size: int,
-                 parent: Union['InGameMessageTable'] = None,
-                 tables: List['InGameMessageTable'] = None,
-                 messages: List['InGameMessage'] = None):
-
+    def __init__(
+        self,
+        number: int,
+        offset: int,
+        size: int,
+        parent: "InGameMessageTable | None" = None,
+        tables: "list[InGameMessageTable] | None" = None,
+        messages: "list[InGameMessage] | None" = None,
+    ):
         self.number = number
         self.offset = offset
         self.size = size
         self._parent = parent
-        self.tables = tables if tables is not None else list()
-        self.messages = messages if messages is not None else list()
+        self.tables = tables if tables is not None else []
+        self.messages: list["InGameMessage"] = messages if messages is not None else []
 
-    def add_table(self, table: 'InGameMessageTable'):
+    def add_table(self, table: "InGameMessageTable"):
         if self.messages:
-            raise RuntimeError('cannot add table while messages exist')
+            raise RuntimeError("cannot add table while messages exist")
 
         self.tables.append(table)
 
-    def add_message(self, message: 'InGameMessage'):
+    def add_message(self, message: "InGameMessage"):
         if self.tables:
-            raise RuntimeError('cannot add message while tables exists')
+            raise RuntimeError("cannot add message while tables exists")
 
         self.messages.append(message)
 
@@ -71,7 +72,7 @@ class InGameMessageTable(Serializable):
         table = self.tables if self.tables else self.messages
 
         encoded = io.BytesIO()
-        offsets = list()
+        offsets = []
 
         encoded.write(bytearray(len(table * 4)))
         offset += len(table) * 4
@@ -84,7 +85,7 @@ class InGameMessageTable(Serializable):
 
         encoded.seek(0, os.SEEK_SET)
 
-        table_bin = struct.pack(f'<{len(offsets)}I', *offsets)
+        table_bin = struct.pack(f"<{len(offsets)}I", *offsets)
         encoded.write(table_bin)
 
         encoded.seek(0, os.SEEK_SET)
@@ -93,22 +94,24 @@ class InGameMessageTable(Serializable):
 
 
 class InGameMessage(Serializable):
-
-    def __init__(self, number: int, offset: int, parent: InGameMessageTable = None, japanese=False):
+    def __init__(
+        self, number: int, offset: int, parent: "InGameMessageTable | None" = None, japanese: "bool | None" = False
+    ):
         self.number: int = number
         self.offset: int = offset
-        self._parent: InGameMessageTable = parent
+        self._parent: "InGameMessageTable | None" = parent
         self.size: int = 0
-        self.message: str = ''
-        self.suffix: bytes = b''
-        self.data: bytes = b''
-        self.data_hex_str: str = ''
+        self.message: str = ""
+        self.suffix: bytes = b""
+        self.data: bytes = b""
+        self.data_hex_str: str = ""
         self.japanese = japanese
 
     @classmethod
-    def from_message(cls, number: int, parent: InGameMessageTable, message: str,
-                     offset=-1, suffix=b'\xff', japanese=False):
-        msg = cls(number,  offset, parent, japanese)
+    def from_message(
+        cls, number: int, parent: InGameMessageTable, message: str, offset=-1, suffix=b"\xff", japanese=False
+    ):
+        msg = cls(number, offset, parent, japanese)
         msg.message = message
         msg.suffix = suffix
         msg.encode()
@@ -126,8 +129,8 @@ class InGameMessage(Serializable):
         return next(has_jp_symbols_iter, False)
 
     @staticmethod
-    def _separate_suffix(data: bytes) -> Tuple[bytes, bytes]:
-        match = re.match(b'^(.*?)(\xFA?\xFF*)$', data, re.DOTALL)
+    def _separate_suffix(data: bytes) -> tuple[bytes, bytes]:
+        match = re.match(b"^(.*?)(\xFA?\xFF*)$", data, re.DOTALL)
         assert match is not None
         data, suffix = match.groups()
         return data, suffix
@@ -139,7 +142,7 @@ class InGameMessage(Serializable):
 
     def _parse_data(self, data: bytes):
         self.size = len(data)
-        self.data_hex_str = ' '.join(f'{x:02X}' for x in data)
+        self.data_hex_str = " ".join(f"{x:02X}" for x in data)
         self.data, self.suffix = self._separate_suffix(data)
 
         text_bin = self.data
@@ -156,13 +159,14 @@ class InGameMessage(Serializable):
             if x == COLOR:
                 idx_left = len(text_bin) - 1 - idx
                 if idx_left >= 3:
-                    self.message += '{Color#%02X%02X%02X}' % (text_bin[idx + 1], text_bin[idx + 2], text_bin[idx + 3])
+                    # pylint: disable=consider-using-f-string
+                    self.message += "{Color#%02X%02X%02X}" % (text_bin[idx + 1], text_bin[idx + 2], text_bin[idx + 3])
                     idx += 3
                 else:
-                    self.message += '{Color}'
+                    self.message += "{Color}"
 
             elif x == NEWLINE:
-                self.message += '\n'
+                self.message += "\n"
 
             elif self.japanese and x in font_table:
                 table = font_table[x]
@@ -170,37 +174,41 @@ class InGameMessage(Serializable):
                 self.message += table[text_bin[idx]]
 
             elif x <= LASTCH:
-                self.message += font_table['default'][x]
+                self.message += font_table["default"][x]
 
             else:
-                self.message += f'{{0x{x:02X}}}'
+                self.message += f"{{0x{x:02X}}}"
 
             idx += 1
 
     @staticmethod
     def _encode_color(color_str):
-        return re.sub(r'{Color#([A-F0-9]{2})([A-F0-9]{2})([A-F0-9]{2})}',
-                      f'{{0x{COLOR:02X}}}{{0x\\1}}{{0x\\2}}{{0x\\3}}',
-                      color_str)
+        return re.sub(
+            r"{Color#([A-F0-9]{2})([A-F0-9]{2})([A-F0-9]{2})}",
+            f"{{0x{COLOR:02X}}}{{0x\\1}}{{0x\\2}}{{0x\\3}}",
+            color_str,
+        )
 
     def encode(self, offset=0):
-        message = self._encode_color(self.message) \
-            .replace('{Color}', f'{{0x{COLOR:02X}}}') \
-            .replace('\n', f'{{0x{NEWLINE:02X}}}')
+        message = (
+            self._encode_color(self.message)
+            .replace("{Color}", f"{{0x{COLOR:02X}}}")
+            .replace("\n", f"{{0x{NEWLINE:02X}}}")
+        )
 
         encoded = io.BytesIO()
 
         char_table = table_jp if self.japanese is True else table_eu
 
-        characters = re.findall(r'({0x[A-F0-9]{2}}|{.*?}|.)', message)
+        characters = re.findall(r"({0x[A-F0-9]{2}}|{.*?}|.)", message)
         for ch in characters:
             enc = None
             if len(ch) != 6:
                 for name, table in char_table.items():
                     if ch in table:
-                        enc = table.index(ch).to_bytes(1, 'little')
-                    if enc is not None and name != 'default':
-                        enc = name.to_bytes(1, 'little') + enc
+                        enc = table.index(ch).to_bytes(1, "little")
+                    if enc is not None and name != "default" and isinstance(name, int):
+                        enc = name.to_bytes(1, "little") + enc
                     if enc is not None:
                         break
             else:
@@ -214,7 +222,7 @@ class InGameMessage(Serializable):
 
         encoded.seek(0, os.SEEK_SET)
         encoded = encoded.read()
-        encoded_hex_str = ' '.join(f'{x:02X}' for x in encoded)
+        encoded_hex_str = " ".join(f"{x:02X}" for x in encoded)
 
         self.data, self.suffix = self._separate_suffix(encoded)
         self.size = len(encoded)
@@ -223,7 +231,7 @@ class InGameMessage(Serializable):
         return encoded
 
     def __str__(self):
-        suffix_hex = ''.join(f'{x:02X}' for x in self.suffix)
+        suffix_hex = "".join(f"{x:02X}" for x in self.suffix)
         return f'"{self.message}" ({suffix_hex})'
 
     def __repr__(self):
@@ -242,10 +250,9 @@ class InGameMessage(Serializable):
 
 
 class InGameMessageParser:
-
-    def __init__(self, file: Union[str, bytes, BinaryIO], table_names: List[str] = None, japanese=False):
+    def __init__(self, file: "str | bytes | BinaryIO", table_names: "list[str] | None" = None, japanese=False):
         if isinstance(file, str):
-            with open(file, 'rb') as fh:
+            with open(file, "rb") as fh:
                 self.file_h = io.BytesIO(fh.read())
         elif isinstance(file, bytes):
             self.file_h = io.BytesIO(file)
@@ -255,30 +262,34 @@ class InGameMessageParser:
             self.file_h = io.BytesIO(file.read())
             file.seek(pos, os.SEEK_SET)
         else:
-            raise ValueError('input must be filename or open file handle')
+            raise ValueError("input must be filename or open file handle")
 
         self.file_size = self.file_h.getbuffer().nbytes
         self.japanese = japanese
 
-        self._boundaries: List[int] = list()
-        self._byte_address_read = list()
+        self._boundaries: list[int] = []
+        self._byte_address_read = []
 
         self.msg_tables = self._parse_obj(japanese=japanese)
 
         self.table_names = None
+
         if isinstance(table_names, list) and len(table_names) == len(self.msg_tables.tables):
             self.table_names = table_names
 
     def __getitem__(self, item):
+        assert self.msg_tables is not None
+
         if isinstance(item, int):
             return self.msg_tables.tables[item]
-        else:
-            table_idx = self.table_names.index(item)
-            return self.msg_tables.tables[table_idx]
+
+        assert self.table_names is not None
+        table_idx = self.table_names.index(item)
+        return self.msg_tables.tables[table_idx]
 
     @staticmethod
     def _read_dword(f):
-        return struct.unpack('<I', f.read(4))[0], f.tell()
+        return struct.unpack("<I", f.read(4))[0], f.tell()
 
     def next_boundary(self, offset):
         return next(b for b in self._boundaries if b > offset)
@@ -302,8 +313,8 @@ class InGameMessageParser:
     def _find_table_size(self, offset):
         max_offset = self.file_size
         position = -1
-        maybe_table = list()
-        address_read = list()
+        maybe_table = []
+        address_read = []
         while max_offset > position:
             address_read.extend([x for x in range(self.file_h.tell(), self.file_h.tell() + 4)])
             if self.file_h.tell() + 4 >= self.file_size:
@@ -316,7 +327,9 @@ class InGameMessageParser:
         self._byte_address_read.extend(address_read)
         return maybe_table, max_offset - offset
 
-    def _parse_obj_tables(self, number, offset=0, msg_table: InGameMessageTable = None, japanese=False):
+    def _parse_obj_tables(
+        self, number, offset=0, msg_table: "InGameMessageTable | None" = None, japanese: "bool | None" = False
+    ):
         self.file_h.seek(offset, os.SEEK_SET)
 
         table, tbl_size = self._find_table_size(offset)
@@ -338,18 +351,21 @@ class InGameMessageParser:
 
         return cur_msg_table
 
-    def _parse_obj(self, japanese=None):
+    def _parse_obj(self, japanese: "bool | None" = None):
         msg_tables = self._parse_obj_tables(number=0, japanese=japanese)
+        assert msg_tables is not None
+
         self._boundaries.append(self.file_size)
         self._boundaries = list(set(self._boundaries))
         self._boundaries.sort()
 
-        for n, table in enumerate(msg_tables.tables):
+        for table in msg_tables.tables:
             self._parse_obj_rec(table)
 
         return msg_tables
 
     def encode(self):
+        assert self.msg_tables is not None
         return self.msg_tables.encode()
 
 
@@ -357,7 +373,7 @@ def inject_english_subtitles(file_h: BinaryIO):
     ig_msg_parser = InGameMessageParser(file_h, japanese=False)
 
     parent = ig_msg_parser[53]
-    parent.messages = list()
+    parent.messages = []
 
     subtitles_en = decode_english_subtitles(file_h)
 

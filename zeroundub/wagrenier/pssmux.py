@@ -5,17 +5,18 @@
 
 import os
 import io
+import glob
 
 from shutil import copyfile
 from typing import BinaryIO
 
 
-audio_segment = b'\x00\x00\x01\xBD'
-pack_start = b'\x00\x00\x01\xBA'
-end_file = b'\x00\x00\x01\xB9'
+audio_segment = b"\x00\x00\x01\xBD"
+pack_start = b"\x00\x00\x01\xBA"
+end_file = b"\x00\x00\x01\xB9"
 
 
-first_header_size = 0x3f
+first_header_size = 0x3F
 header_size = 0x17
 
 
@@ -29,7 +30,7 @@ def seek_next_audio(file):
         block_id = file.read(0x4)
 
         if block_id == pack_start:
-            file.seek(0xa, os.SEEK_CUR)
+            file.seek(0xA, os.SEEK_CUR)
         elif block_id == audio_segment:
             return False
         elif block_id == end_file:
@@ -38,22 +39,22 @@ def seek_next_audio(file):
             return True
         else:
             block_size = file.read(0x2)
-            file.seek(int.from_bytes(block_size, 'big'), os.SEEK_CUR)
+            file.seek(int.from_bytes(block_size, "big"), os.SEEK_CUR)
 
 
 def initial_audio_block(file):
-    b_size = int.from_bytes(file.read(0x2), 'big')
+    b_size = int.from_bytes(file.read(0x2), "big")
 
-    file.seek(0x3b - 0x6, os.SEEK_CUR)
+    file.seek(0x3B - 0x6, os.SEEK_CUR)
 
-    audio_total_size = int.from_bytes(file.read(0x4), 'little')
+    audio_total_size = int.from_bytes(file.read(0x4), "little")
     data_size = b_size - first_header_size + 0x6
 
     return audio_total_size, data_size
 
 
 def audio_block(file):
-    b_size = int.from_bytes(file.read(0x2), 'big')
+    b_size = int.from_bytes(file.read(0x2), "big")
 
     file.seek(-0x6, os.SEEK_CUR)
     file.seek(header_size, os.SEEK_CUR)
@@ -84,20 +85,20 @@ def build_full_audio_buffer_io(file):
 def pss_mux(source: str, target: str, output: str):
     copyfile(target, output)
 
-    with open(source, 'rb') as source_file:
-        with open(output, 'rb+') as target_file:
+    with open(source, "rb") as source_file:
+        with open(output, "rb+") as target_file:
             pss_mux_from_bytes_io(source_file, target_file)
 
 
 def pss_mux_inplace(source: str, target: str):
-    with open(source, 'rb') as source_file:
-        with open(target, 'rb+') as target_file:
+    with open(source, "rb") as source_file:
+        with open(target, "rb+") as target_file:
             pss_mux_from_bytes_io(source_file, target_file)
 
 
 def pss_mux_in_memory(source: str, target: str):
-    with open(source, 'rb') as source_file:
-        with open(target, 'rb') as target_file:
+    with open(source, "rb") as source_file:
+        with open(target, "rb") as target_file:
             target_buffer_io = io.BytesIO(target_file.read())
 
             pss_mux_from_bytes_io(source_file, target_buffer_io)
@@ -146,22 +147,19 @@ def pss_mux_from_bytes_io(source_io: BinaryIO, target_io: BinaryIO):
 
 
 def parse_all_videos(jp_path, en_path, out_path):
-    import glob
+    jp_video_movie = [f for f in glob.glob(os.path.join(jp_path, "MOVIE", "*.*")) if f.upper().endswith(".PSS")]
+    jp_video_movie2 = [f for f in glob.glob(os.path.join(jp_path, "MOVIE2", "*.*")) if f.upper().endswith(".PSS")]
 
-    jp_video_movie = [f for f in glob.glob(os.path.join(jp_path, 'MOVIE', '*.*')) if f.upper().endswith('.PSS')]
-    jp_video_movie2 = [f for f in glob.glob(os.path.join(jp_path, 'MOVIE2', '*.*')) if f.upper().endswith('.PSS')]
+    en_video_movie = [f for f in glob.glob(os.path.join(en_path, "MOVIE", "*.*")) if f.upper().endswith(".PSS")]
+    en_video_movie2 = [f for f in glob.glob(os.path.join(en_path, "MOVIE2", "*.*")) if f.upper().endswith(".PSS")]
+    en_video_movie3 = [f for f in glob.glob(os.path.join(en_path, "MOVIE3", "*.*")) if f.upper().endswith(".PSS")]
+    en_video_movie4 = [f for f in glob.glob(os.path.join(en_path, "MOVIE4", "*.*")) if f.upper().endswith(".PSS")]
 
-    en_video_movie = [f for f in glob.glob(os.path.join(en_path, 'MOVIE', '*.*')) if f.upper().endswith('.PSS')]
-    en_video_movie2 = [f for f in glob.glob(os.path.join(en_path, 'MOVIE2', '*.*')) if f.upper().endswith('.PSS')]
-    en_video_movie3 = [f for f in glob.glob(os.path.join(en_path, 'MOVIE3', '*.*')) if f.upper().endswith('.PSS')]
-    en_video_movie4 = [f for f in glob.glob(os.path.join(en_path, 'MOVIE4', '*.*')) if f.upper().endswith('.PSS')]
-
-    en_video_movie5 = [f for f in glob.glob(os.path.join(en_path, 'MOVIE5', '*.*')) if f.upper().endswith('.PSS')]
+    en_video_movie5 = [f for f in glob.glob(os.path.join(en_path, "MOVIE5", "*.*")) if f.upper().endswith(".PSS")]
 
     def find_matches(_jp_list, _en_list):
-
         def basename(p):
-            return os.path.splitext(os.path.basename(p))[0].rstrip('p')
+            return os.path.splitext(os.path.basename(p))[0].rstrip("p")
 
         matches = list()
         for _jp_movie in _jp_list:

@@ -1,3 +1,4 @@
+# ruff: noqa: E501 # pylint: disable=line-too-long
 import os
 import hashlib
 
@@ -275,12 +276,12 @@ subtitles_en_encoded = {
     267: "7b49f3da9c7c4b73486d464303070915794a465a4403404c557b3f5a4a7a0e4a4297467f5e4b4700494d714424",
     268: "61673f4c476e4f466b495ab8d4d1217e464c086850500e4d754157266b444066744c7c0c5f78437042aa7c7c021e31",
     269: "5757084d484d09e234407a02311e3f6442680d407f71de43114e7a47435d40b69f87644d6c493f5042404c5377474c4422554e42513f7f424b5a46388a034d5b46703f4b5a766d5d08080311",
-    270: "52086df39fd12700066009564843034c6b350300"
+    270: "52086df39fd12700066009564843034c6b350300",
 }
 
 
-ig_msg_e_digest = '540a862fc08283823b61d8f56a39d08636348e0c273c5b4c99ddd6a25e343c91'
-subtitles_en_digest = 'be54c6abc7dbecba20f344219a6b22a8e23bdb0877dee35a1721d530d86dfd44'
+ig_msg_e_digest = "540a862fc08283823b61d8f56a39d08636348e0c273c5b4c99ddd6a25e343c91"
+subtitles_en_digest = "be54c6abc7dbecba20f344219a6b22a8e23bdb0877dee35a1721d530d86dfd44"
 
 
 def xor(first, second):
@@ -295,13 +296,13 @@ def decode_english_subtitles(ig_msg_e: BinaryIO):
 
     computed_ig_msg_e_digest = hashlib.sha256(ig_msg_e_bin).hexdigest()
     if computed_ig_msg_e_digest != ig_msg_e_digest:
-        raise RuntimeError('IG_MSG_E.OBJ digest mismatch')
+        raise RuntimeError("IG_MSG_E.OBJ digest mismatch")
 
     sorted_subs = [(num, bytes.fromhex(enc)) for num, enc in subtitles_en_encoded.items()]
     sorted_subs.sort(key=lambda x: x[0])
 
     sub_size = sum(len(sub) for _, sub in sorted_subs)
-    xor_base = ig_msg_e_bin.replace(b'\x00', b'')[:sub_size]
+    xor_base = ig_msg_e_bin.replace(b"\x00", b"")[:sub_size]
 
     position = 0
     decoded_subs = dict()
@@ -310,12 +311,11 @@ def decode_english_subtitles(ig_msg_e: BinaryIO):
         dec = xor(xor_base[position:], enc)
         position += len(enc)
         sha256_hash.update(dec)
-        decoded_subs[num] = dec.decode('utf-8')
+        decoded_subs[num] = dec.decode("utf-8")
 
     decoded_sub_digest = sha256_hash.hexdigest()
 
     if decoded_sub_digest != subtitles_en_digest:
-        raise RuntimeError('subtitle digest mismatch')
+        raise RuntimeError("subtitle digest mismatch")
 
     return decoded_subs
-

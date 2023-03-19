@@ -5,8 +5,7 @@ import errno
 from typing import BinaryIO
 
 
-class SubFile(io.BufferedIOBase, BinaryIO):
-
+class SubFile(io.BufferedIOBase, BinaryIO):  # pylint: disable=abstract-method
     def __init__(self, file_h: BinaryIO, offset: int, size: int):
         self.file_h: BinaryIO = file_h
         self.offset: int = offset
@@ -42,7 +41,7 @@ class SubFile(io.BufferedIOBase, BinaryIO):
         elif isinstance(size, int) and size >= 0:
             size = min(size, self.size - self.position)
         else:
-            raise TypeError(f'argument should be integer or None, not \'{type(size)}\'')
+            raise TypeError(f"argument should be integer or None, not '{type(size)}'")
 
         self.file_h.seek(self.offset + self.position)
         self.position += size
