@@ -566,6 +566,7 @@ def merge_iso_img_bd_contents(eu_iso_path: str, jp_iso_path: str, out_iso_path: 
 
     scene_audio_entries = filter_jp_entries_common(r"SCENE.*\.STR", pad=True)
     sfx_audio_entries = filter_jp_entries_common(r"^((?!SCENE).).*\.STR", pad=True) if replace_sfx else {}
+    bd_audio_entries = filter_jp_entries_common(r"^.*\.BD", pad=True) if replace_sfx else {}
     ingame_text_en = filter_ingame_text_en()
 
     undub_entries: list[AbstractUndubEntry] = []
@@ -576,6 +577,9 @@ def merge_iso_img_bd_contents(eu_iso_path: str, jp_iso_path: str, out_iso_path: 
 
         elif toc.name in scene_audio_entries:
             undub_entries.append(scene_audio_entries[toc.name])
+
+        elif toc.name in bd_audio_entries:
+            undub_entries.append(bd_audio_entries[toc.name])
 
         elif replace_sfx and toc.name in sfx_audio_entries:
             undub_entries.append(sfx_audio_entries[toc.name])
