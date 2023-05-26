@@ -72,6 +72,12 @@ def main():
     parser.add_argument("iso_out", type=str, help="output path for the undubbed ISO (file MUST NOT exist")
 
     parser.add_argument(
+        "--fix-kirie-camera-bug",
+        dest="fix_kirie_camera_bug",
+        action="store_true",
+        help="Fixes a bug where the game could freeze during the last battle with Kirie",
+    )
+    parser.add_argument(
         "--jp-title",
         dest="replace_title_jp",
         action="store_true",
@@ -145,6 +151,7 @@ def main():
     with Progress("Patching ELF", ProgressErrorELFPatch) as pbar:
         patch_elf_inplace(
             args.iso_out,
+            fix_kirie_camera_bug=args.fix_kirie_camera_bug,
             force_lang=args.force_lang,
             no_bloom=args.no_bloom,
             dark_filter=args.dark_filter,

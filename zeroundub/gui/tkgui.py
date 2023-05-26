@@ -161,6 +161,7 @@ class UndubThread(threading.Thread):
             with Progress(self.app, self.app.label_elf, self.app.label_elf_perc, ProgressErrorELFPatch):
                 patch_elf_inplace(
                     self.app.undub_iso_path,
+                    fix_kirie_camera_bug=self.app.var_fix_kirie_camera_bug.get(),
                     force_lang=self.app.var_force_language_selection.get(),
                     no_bloom=self.app.var_disable_bloom.get(),
                     dark_filter=self.app.var_remove_dark_filter.get(),
@@ -197,6 +198,7 @@ class App(ttk.Frame):
 
         self.patch_frame: ttk.LabelFrame
 
+        self.check_fix_kirie_camera_bug: ttk.Checkbutton
         self.check_16_9: ttk.Checkbutton
         self.check_disable_bloom: ttk.Checkbutton
         self.check_remove_dark_filter: ttk.Checkbutton
@@ -245,6 +247,7 @@ class App(ttk.Frame):
         self.sizegrip: ttk.Sizegrip
 
         # Create control variables
+        self.var_fix_kirie_camera_bug = tk.BooleanVar(value=True)
         self.var_16_9 = tk.BooleanVar()
         self.var_disable_bloom = tk.BooleanVar()
         self.var_remove_dark_filter = tk.BooleanVar()
@@ -332,8 +335,24 @@ class App(ttk.Frame):
         self.patch_frame.columnconfigure(index=0, weight=1)
 
         # Checkbuttons
+        self.check_fix_kirie_camera_bug = ttk.Checkbutton(
+            self.patch_frame, text="Fix Kirie Camera Bug", variable=self.var_fix_kirie_camera_bug, state="disabled"
+        )
+        self.check_fix_kirie_camera_bug.grid(row=0, column=0, padx=0, pady=10, sticky="nsew")
+        self.add_help(
+            self.check_fix_kirie_camera_bug,
+            """
+            Fix Kirie Camera Bug.
+            
+            Fix for the Kirie Camera Bug, where aiming the camera to a certain spot during the last battle with
+            Kirie may result in a game freeze.
+
+            Thanks to weirdbeardgame for the fix.
+        """,  # noqa: E501 # pylint: disable=line-too-long
+        )
+
         self.check_16_9 = ttk.Checkbutton(self.patch_frame, text="Force 16:9", variable=self.var_16_9, state="disabled")
-        self.check_16_9.grid(row=0, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_16_9.grid(row=1, column=0, padx=0, pady=10, sticky="nsew")
         self.add_help(
             self.check_16_9,
             """
@@ -564,6 +583,7 @@ class App(ttk.Frame):
             if os.path.splitext(undub_iso_path.lower())[1] != ".iso":
                 undub_iso_path += ".iso"
             self.undub_iso_path = undub_iso_path
+            self.check_fix_kirie_camera_bug.state(["!disabled"])
             self.check_16_9.state(["!disabled"])
             self.check_disable_bloom.state(["!disabled"])
             self.check_remove_dark_filter.state(["!disabled"])
@@ -577,6 +597,7 @@ class App(ttk.Frame):
         self.button_iso_eu.state(["disabled"])
         self.button_iso_jp.state(["disabled"])
         self.button_iso_undub.state(["disabled"])
+        self.check_fix_kirie_camera_bug.state(["disabled"])
         self.check_16_9.state(["disabled"])
         self.check_disable_bloom.state(["disabled"])
         self.check_remove_dark_filter.state(["disabled"])

@@ -175,6 +175,7 @@ def restore_elf_crc(file_h: BinaryIO, target: int):
 
 def patch_elf_inplace(
     iso_path: str,
+    fix_kirie_camera_bug=True,
     force_lang=False,
     no_bloom=False,
     dark_filter=False,
@@ -196,6 +197,7 @@ def patch_elf_inplace(
     if callback:
         callback(
             2
+            + int(fix_kirie_camera_bug)
             + int(force_lang)
             + int(no_bloom)
             + int(dark_filter)
@@ -226,6 +228,13 @@ def patch_elf_inplace(
         if force_lang:
             file_h.seek(0x001202CE)
             file_h.write(b"\x00\x14")
+
+            if callback:
+                callback()
+
+        if fix_kirie_camera_bug:
+            file_h.seek(0x000203B4)
+            file_h.write(b"\x32\x60\x15\x46\x02\x00\x01\x45")
 
             if callback:
                 callback()

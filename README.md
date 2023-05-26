@@ -207,6 +207,7 @@ I'd like to give my thanks:
   be injected into the game
 - [pelvicthrustman](https://www.psx-place.com/threads/ps2-patch-engine-by-pelvicthrustman.19167/)
   and [Snaggly](https://github.com/Snaggly) for their tools to inject patches into the ELF
+- weirdbeardgame, for the Kirie camera bug fix
 - All the guys out there on so many forums I've lost track of, that released bits of
   information about many game file formats
 - Finally, to 2010 me, who painstakingly spent weeks building his own undub, reversed-engineered
