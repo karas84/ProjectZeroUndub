@@ -72,6 +72,12 @@ def main():
     parser.add_argument("iso_out", type=str, help="output path for the undubbed ISO (file MUST NOT exist")
 
     parser.add_argument(
+        "--jp-title",
+        dest="replace_title_jp",
+        action="store_true",
+        help="Replace the title screen background with the one in the japanese version",
+    )
+    parser.add_argument(
         "--force-language-selection",
         dest="force_lang",
         action="store_true",
@@ -151,7 +157,12 @@ def main():
 
     with Progress("Patching Contents", ProgressErrorGamePatch) as pbar:
         merge_iso_img_bd_contents(
-            eu_iso_path=args.iso_eu, jp_iso_path=args.iso_jp, out_iso_path=args.iso_out, replace_sfx=True, callback=pbar
+            eu_iso_path=args.iso_eu,
+            jp_iso_path=args.iso_jp,
+            out_iso_path=args.iso_out,
+            replace_title_jp=args.replace_title_jp,
+            replace_sfx=True,
+            callback=pbar,
         )
 
     print()

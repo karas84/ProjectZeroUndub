@@ -535,7 +535,14 @@ def check_iso_hashes(iso_file: str, lang: str, callback=None):
             callback()
 
 
-def merge_iso_img_bd_contents(eu_iso_path: str, jp_iso_path: str, out_iso_path: str, replace_sfx=False, callback=None):
+def merge_iso_img_bd_contents(
+    eu_iso_path: str,
+    jp_iso_path: str,
+    out_iso_path: str,
+    replace_title_jp=False,
+    replace_sfx=False,
+    callback=None,
+):
     reader_eu = PJZReader(eu_iso_path)
     reader_jp = PJZReader(jp_iso_path)
 
@@ -564,10 +571,55 @@ def merge_iso_img_bd_contents(eu_iso_path: str, jp_iso_path: str, out_iso_path: 
     def filter_ingame_text_en():
         return next(_toc for _toc in entries_eu if _toc.name == "IG_MSG_E.OBJ")
 
+    def repack_title():
+        title_jp = next((toc_jp for toc_jp in entries_jp if toc_jp.name == "TITLE.PK2"), None)
+        if not title_jp:
+            raise RuntimeError("cannot find title image in japanese iso")
+
+        titles_eu = {toc_eu.name: toc_eu for toc_eu in entries_eu if re.match(r"TITLE_[EFGSI]\.PK2", toc_eu.name)}
+        if len(titles_eu) != 5:
+            raise RuntimeError("cannot find title images in european iso")
+
+        with reader_jp.open(title_jp.name) as fh:
+            title_jp_data = bytearray(fh.read())
+
+        titles_eu_data: dict[str, bytearray] = {}
+        for title_eu in titles_eu.values():
+            with reader_eu.open(title_eu.name) as fh:
+                titles_eu_data[title_eu.name] = bytearray(fh.read())
+
+        def _get_title_image_addresses(title_data: bytearray):
+            num_files = title_data[:16]
+            num_files, *_ = struct.unpack("<IIII", num_files)
+            num_byte_addrs = int(math.ceil(num_files / 4) * 4) * 4
+            file_addrs = title_data[16 : 16 + num_byte_addrs][: num_files * 4]
+            file_addrs = list(struct.unpack(f"<{num_files}I", file_addrs))
+            file_sizes = [file_addrs[i + 1] - file_addrs[i] for i in range(len(file_addrs) - 1)]
+            return file_addrs, file_sizes + [len(title_data) - file_addrs[-1]]
+
+        new_titles: dict[str, ExternalFileEntry] = {}
+
+        addr_jp = _get_title_image_addresses(title_jp_data)
+        for name, title_eu_data in titles_eu_data.items():
+            addr_eu = _get_title_image_addresses(title_eu_data)
+            if addr_eu[1][:-1] != addr_jp[1][:-2]:
+                raise RuntimeError("wrong title image addresses")
+            for i in range(len(addr_eu[1][:-1])):
+                data_jp = title_jp_data[addr_jp[0][i] : addr_jp[0][i] + addr_jp[1][i]]
+                title_eu_data[addr_eu[0][i] : addr_eu[0][i] + addr_eu[1][i]] = data_jp
+
+            ee = ExternalFileEntry(io.BytesIO(title_eu_data), name, titles_eu[name].number)
+            new_titles[name] = ee
+
+        return new_titles
+
+    repack_title()
+
     scene_audio_entries = filter_jp_entries_common(r"SCENE.*\.STR", pad=True)
     sfx_audio_entries = filter_jp_entries_common(r"^((?!SCENE).).*\.STR", pad=True) if replace_sfx else {}
     bd_audio_entries = filter_jp_entries_common(r"^.*\.BD", pad=True) if replace_sfx else {}
     ingame_text_en = filter_ingame_text_en()
+    title_entries = repack_title() if replace_title_jp else {}
 
     undub_entries: list[AbstractUndubEntry] = []
 
@@ -583,6 +635,9 @@ def merge_iso_img_bd_contents(eu_iso_path: str, jp_iso_path: str, out_iso_path: 
 
         elif replace_sfx and toc.name in sfx_audio_entries:
             undub_entries.append(sfx_audio_entries[toc.name])
+
+        elif toc.name in title_entries:
+            undub_entries.append(title_entries[toc.name])
 
         else:
             undub_entries.append(ReaderUndubEntry(reader_eu, toc, toc.name, toc.number))

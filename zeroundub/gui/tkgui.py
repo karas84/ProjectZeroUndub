@@ -176,6 +176,7 @@ class UndubThread(threading.Thread):
                     eu_iso_path=self.app.eu_iso_path,
                     jp_iso_path=self.app.jp_iso_path,
                     out_iso_path=self.app.undub_iso_path,
+                    replace_title_jp=self.app.var_replace_title_jp.get(),
                     replace_sfx=True,
                     callback=self.do_merge_iso_cp,
                 )
@@ -202,6 +203,7 @@ class App(ttk.Frame):
         self.check_remove_ingame_noise: ttk.Checkbutton
         self.check_remove_title_noise: ttk.Checkbutton
         self.check_force_language_selection: ttk.Checkbutton
+        self.check_replace_title_jp: ttk.Checkbutton
 
         self.widgets_frame: ttk.Frame
 
@@ -249,6 +251,7 @@ class App(ttk.Frame):
         self.var_remove_ingame_noise = tk.BooleanVar()
         self.var_remove_title_noise = tk.BooleanVar()
         self.var_force_language_selection = tk.BooleanVar()
+        self.var_replace_title_jp = tk.BooleanVar()
 
         self.var_progress_eu_check = tk.DoubleVar(value=0.0)  # 0.0 - 100.0
         self.var_progress_jp_check = tk.DoubleVar(value=0.0)  # 0.0 - 100.0
@@ -415,6 +418,23 @@ class App(ttk.Frame):
         """,  # noqa: E501 # pylint: disable=line-too-long
         )
 
+        self.check_replace_title_jp = ttk.Checkbutton(
+            self.patch_frame,
+            text="Japanese Title Screen",
+            variable=self.var_replace_title_jp,
+            state="disabled",
+        )
+        self.check_replace_title_jp.grid(row=7, column=0, padx=0, pady=10, sticky="nsew")
+        self.add_help(
+            self.check_replace_title_jp,
+            """
+            Replace title screen with the Japanese one.
+            
+            The title screen will be replaced with the one found in the Japanese version.
+            Menu entries and menu fonts will not change as the Japanese ones are not compatible and cannot be replaced.
+        """,  # noqa: E501 # pylint: disable=line-too-long
+        )
+
         # ################################
         # Progress Frame
         self.progress_frame = ttk.Frame(self, padding=(0, 0, 0, 0))
@@ -550,6 +570,7 @@ class App(ttk.Frame):
             self.check_remove_ingame_noise.state(["!disabled"])
             self.check_remove_title_noise.state(["!disabled"])
             self.check_force_language_selection.state(["!disabled"])
+            self.check_replace_title_jp.state(["!disabled"])
             self.button_start_undub.state(["!disabled"])
 
     def start_undub(self):
@@ -562,6 +583,7 @@ class App(ttk.Frame):
         self.check_remove_ingame_noise.state(["disabled"])
         self.check_remove_title_noise.state(["disabled"])
         self.check_force_language_selection.state(["disabled"])
+        self.check_replace_title_jp.state(["disabled"])
         self.button_start_undub.state(["disabled"])
 
         self._undub_started = True
