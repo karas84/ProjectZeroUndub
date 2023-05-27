@@ -202,12 +202,12 @@ I'd like to give my thanks:
 - [wagrenier](https://github.com/wagrenier) again, for his excellent python version of
   [PssMux](https://github.com/wagrenier/PssMux), which makes this tool able to automatically
   undub all FMVs in the game!
-- [pgert](http://forums.pcsx2.net/Thread-PCSX2-Widescreen-Game-Patches?pid=240786#pid240786)
+- [pgert](https://forums.pcsx2.net/Thread-PCSX2-Widescreen-Game-Patches?pid=240786#pid240786)
   and the whole [PCSX2 community](https://forums.pcsx2.net/) for the great patches that can
   be injected into the game
 - [pelvicthrustman](https://www.psx-place.com/threads/ps2-patch-engine-by-pelvicthrustman.19167/)
   and [Snaggly](https://github.com/Snaggly) for their tools to inject patches into the ELF
-- weirdbeardgame, for the Kirie camera bug fix
+- [weirdbeardgame](https://github.com/weirdbeardgame/), for the Kirie camera bug fix
 - All the guys out there on so many forums I've lost track of, that released bits of
   information about many game file formats
 - Finally, to 2010 me, who painstakingly spent weeks building his own undub, reversed-engineered
