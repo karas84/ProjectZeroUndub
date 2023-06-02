@@ -84,6 +84,12 @@ def main():
         help="Replace the title screen background with the one in the japanese version",
     )
     parser.add_argument(
+        "--replace-models",
+        dest="replace_models",
+        action="store_true",
+        help="Replace all Miku models with the original Japanese version",
+    )
+    parser.add_argument(
         "--force-language-selection",
         dest="force_lang",
         action="store_true",
@@ -168,6 +174,7 @@ def main():
             jp_iso_path=args.iso_jp,
             out_iso_path=args.iso_out,
             replace_title_jp=args.replace_title_jp,
+            replace_models=args.replace_models,
             replace_sfx=True,
             callback=pbar,
         )

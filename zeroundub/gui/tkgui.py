@@ -178,6 +178,7 @@ class UndubThread(threading.Thread):
                     jp_iso_path=self.app.jp_iso_path,
                     out_iso_path=self.app.undub_iso_path,
                     replace_title_jp=self.app.var_replace_title_jp.get(),
+                    replace_models=self.app.var_replace_models.get(),
                     replace_sfx=True,
                     callback=self.do_merge_iso_cp,
                 )
@@ -206,6 +207,7 @@ class App(ttk.Frame):
         self.check_remove_title_noise: ttk.Checkbutton
         self.check_force_language_selection: ttk.Checkbutton
         self.check_replace_title_jp: ttk.Checkbutton
+        self.check_replace_models: ttk.Checkbutton
 
         self.widgets_frame: ttk.Frame
 
@@ -255,6 +257,7 @@ class App(ttk.Frame):
         self.var_remove_title_noise = tk.BooleanVar()
         self.var_force_language_selection = tk.BooleanVar()
         self.var_replace_title_jp = tk.BooleanVar()
+        self.var_replace_models = tk.BooleanVar()
 
         self.var_progress_eu_check = tk.DoubleVar(value=0.0)  # 0.0 - 100.0
         self.var_progress_jp_check = tk.DoubleVar(value=0.0)  # 0.0 - 100.0
@@ -334,11 +337,13 @@ class App(ttk.Frame):
         self.patch_frame.grid(row=0, column=1, padx=(20, 20), pady=(20, 0), sticky="nsew", rowspan=1)
         self.patch_frame.columnconfigure(index=0, weight=1)
 
+        check_pad_top = 4
+
         # Checkbuttons
         self.check_fix_kirie_camera_bug = ttk.Checkbutton(
             self.patch_frame, text="Fix Kirie Camera Bug", variable=self.var_fix_kirie_camera_bug, state="disabled"
         )
-        self.check_fix_kirie_camera_bug.grid(row=0, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_fix_kirie_camera_bug.grid(row=0, column=0, padx=0, pady=(10, check_pad_top), sticky="nsew")
         self.add_help(
             self.check_fix_kirie_camera_bug,
             """
@@ -352,7 +357,7 @@ class App(ttk.Frame):
         )
 
         self.check_16_9 = ttk.Checkbutton(self.patch_frame, text="Force 16:9", variable=self.var_16_9, state="disabled")
-        self.check_16_9.grid(row=1, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_16_9.grid(row=1, column=0, padx=0, pady=check_pad_top, sticky="nsew")
         self.add_help(
             self.check_16_9,
             """
@@ -369,7 +374,7 @@ class App(ttk.Frame):
         self.check_disable_bloom = ttk.Checkbutton(
             self.patch_frame, text="Disable Bloom Effect", variable=self.var_disable_bloom, state="disabled"
         )
-        self.check_disable_bloom.grid(row=2, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_disable_bloom.grid(row=2, column=0, padx=0, pady=check_pad_top, sticky="nsew")
         self.add_help(
             self.check_disable_bloom,
             """
@@ -382,7 +387,7 @@ class App(ttk.Frame):
         self.check_remove_dark_filter = ttk.Checkbutton(
             self.patch_frame, text="Remove Dark Filter", variable=self.var_remove_dark_filter, state="disabled"
         )
-        self.check_remove_dark_filter.grid(row=3, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_remove_dark_filter.grid(row=3, column=0, padx=0, pady=check_pad_top, sticky="nsew")
         self.add_help(
             self.check_remove_dark_filter,
             """
@@ -395,7 +400,7 @@ class App(ttk.Frame):
         self.check_remove_ingame_noise = ttk.Checkbutton(
             self.patch_frame, text="Remove Ingame Noise", variable=self.var_remove_ingame_noise, state="disabled"
         )
-        self.check_remove_ingame_noise.grid(row=4, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_remove_ingame_noise.grid(row=4, column=0, padx=0, pady=check_pad_top, sticky="nsew")
         self.add_help(
             self.check_remove_ingame_noise,
             """
@@ -408,7 +413,7 @@ class App(ttk.Frame):
         self.check_remove_title_noise = ttk.Checkbutton(
             self.patch_frame, text="Remove Title Noise", variable=self.var_remove_title_noise, state="disabled"
         )
-        self.check_remove_title_noise.grid(row=5, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_remove_title_noise.grid(row=5, column=0, padx=0, pady=check_pad_top, sticky="nsew")
         self.add_help(
             self.check_remove_title_noise,
             """
@@ -424,7 +429,7 @@ class App(ttk.Frame):
             variable=self.var_force_language_selection,
             state="disabled",
         )
-        self.check_force_language_selection.grid(row=6, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_force_language_selection.grid(row=6, column=0, padx=0, pady=check_pad_top, sticky="nsew")
         self.add_help(
             self.check_force_language_selection,
             """
@@ -443,14 +448,32 @@ class App(ttk.Frame):
             variable=self.var_replace_title_jp,
             state="disabled",
         )
-        self.check_replace_title_jp.grid(row=7, column=0, padx=0, pady=10, sticky="nsew")
+        self.check_replace_title_jp.grid(row=7, column=0, padx=0, pady=check_pad_top, sticky="nsew")
         self.add_help(
             self.check_replace_title_jp,
             """
             Replace title screen with the Japanese one.
             
             The title screen will be replaced with the one found in the Japanese version.
+            
             Menu entries and menu fonts will not change as the Japanese ones are not compatible and cannot be replaced.
+        """,  # noqa: E501 # pylint: disable=line-too-long
+        )
+
+        self.check_replace_models = ttk.Checkbutton(
+            self.patch_frame,
+            text="Replace Models",
+            variable=self.var_replace_models,
+            state="disabled",
+        )
+        self.check_replace_models.grid(row=8, column=0, padx=0, pady=(check_pad_top, 10), sticky="nsew")
+        self.add_help(
+            self.check_replace_models,
+            """
+            Replace all Miku models with the original Japanese version.
+            
+            All Miku models, including both 3D and 2D ones such as the menu portrait and the background image
+            displayed at the beginning of each night, will be replaced with the ones found in the Japanese version.
         """,  # noqa: E501 # pylint: disable=line-too-long
         )
 
@@ -591,6 +614,7 @@ class App(ttk.Frame):
             self.check_remove_title_noise.state(["!disabled"])
             self.check_force_language_selection.state(["!disabled"])
             self.check_replace_title_jp.state(["!disabled"])
+            self.check_replace_models.state(["!disabled"])
             self.button_start_undub.state(["!disabled"])
 
     def start_undub(self):
@@ -605,6 +629,7 @@ class App(ttk.Frame):
         self.check_remove_title_noise.state(["disabled"])
         self.check_force_language_selection.state(["disabled"])
         self.check_replace_title_jp.state(["disabled"])
+        self.check_replace_models.state(["disabled"])
         self.button_start_undub.state(["disabled"])
 
         self._undub_started = True

@@ -12,7 +12,7 @@ def remove_ctrl_c_echo():
     try:
         if "linux" in sys.platform and sys.stdout.isatty():
             os.system("stty -echoctl")
-    except:
+    except Exception:
         pass
 
 

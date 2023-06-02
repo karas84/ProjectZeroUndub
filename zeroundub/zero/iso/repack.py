@@ -11,11 +11,13 @@ from abc import ABC, abstractmethod
 from typing import BinaryIO, cast
 from functools import reduce
 
-from zeroundub.utils.file import SubFile
-from zeroundub.wagrenier.pssmux import pss_mux_from_bytes_io
+from ..pk2 import PK2Archive
+from ..tim2 import patch_pl_mtop
+from ...utils.file import SubFile
 from ..text.parser import inject_english_subtitles
 from ..reader.entry import TOCEntry
 from ..reader.pjzreader import PJZReader
+from ...wagrenier.pssmux import pss_mux_from_bytes_io
 
 
 class AbstractUndubEntry(ABC):
@@ -548,8 +550,9 @@ def merge_iso_img_bd_contents(
     eu_iso_path: str,
     jp_iso_path: str,
     out_iso_path: str,
-    replace_title_jp=False,
-    replace_sfx=False,
+    replace_title_jp,
+    replace_models,
+    replace_sfx,
     callback=None,
 ):
     reader_eu = PJZReader(eu_iso_path)
@@ -581,54 +584,150 @@ def merge_iso_img_bd_contents(
         return next(_toc for _toc in entries_eu if _toc.name == "IG_MSG_E.OBJ")
 
     def repack_title():
-        title_jp = next((toc_jp for toc_jp in entries_jp if toc_jp.name == "TITLE.PK2"), None)
-        if not title_jp:
+        title_jp_toc = next((toc_jp for toc_jp in entries_jp if toc_jp.name == "TITLE.PK2"), None)
+        if not title_jp_toc:
             raise RuntimeError("cannot find title image in japanese iso")
 
-        titles_eu = {toc_eu.name: toc_eu for toc_eu in entries_eu if re.match(r"TITLE_[EFGSI]\.PK2", toc_eu.name)}
-        if len(titles_eu) != 5:
+        titles_eu_toc = [toc_eu for toc_eu in entries_eu if re.match(r"TITLE_[EFGSI]\.PK2", toc_eu.name)]
+        if len(titles_eu_toc) != 5:
             raise RuntimeError("cannot find title images in european iso")
 
-        with reader_jp.open(title_jp.name) as fh:
-            title_jp_data = bytearray(fh.read())
-
-        titles_eu_data: dict[str, bytearray] = {}
-        for title_eu in titles_eu.values():
-            with reader_eu.open(title_eu.name) as fh:
-                titles_eu_data[title_eu.name] = bytearray(fh.read())
-
-        def _get_title_image_addresses(title_data: bytearray):
-            num_files = title_data[:16]
-            num_files, *_ = struct.unpack("<IIII", num_files)
-            num_byte_addrs = int(math.ceil(num_files / 4) * 4) * 4
-            file_addrs = title_data[16 : 16 + num_byte_addrs][: num_files * 4]
-            file_addrs = list(struct.unpack(f"<{num_files}I", file_addrs))
-            file_sizes = [file_addrs[i + 1] - file_addrs[i] for i in range(len(file_addrs) - 1)]
-            return file_addrs, file_sizes + [len(title_data) - file_addrs[-1]]
+        NUM_TIM2_IN_TITLE = 11
 
         new_titles: dict[str, ExternalFileEntry] = {}
 
-        addr_jp = _get_title_image_addresses(title_jp_data)
-        for name, title_eu_data in titles_eu_data.items():
-            addr_eu = _get_title_image_addresses(title_eu_data)
-            if addr_eu[1][:-1] != addr_jp[1][:-2]:
-                raise RuntimeError("wrong title image addresses")
-            for i in range(len(addr_eu[1][:-1])):
-                data_jp = title_jp_data[addr_jp[0][i] : addr_jp[0][i] + addr_jp[1][i]]
-                title_eu_data[addr_eu[0][i] : addr_eu[0][i] + addr_eu[1][i]] = data_jp
+        with reader_jp.open(title_jp_toc.name) as fh:
+            title_jp_toc = PK2Archive(fh)
 
-            ee = ExternalFileEntry(io.BytesIO(title_eu_data), name, titles_eu[name].number)
-            new_titles[name] = ee
+            for title_eu_toc in titles_eu_toc:
+                with reader_eu.open(title_eu_toc.name) as fh:
+                    title_eu = PK2Archive(fh, copy=True)
+
+                    for i in range(NUM_TIM2_IN_TITLE):
+                        title_eu[i] = title_jp_toc[i]
+
+                    new_titles[title_eu_toc.name] = ExternalFileEntry(
+                        file=title_eu.data,
+                        name=title_eu_toc.name,
+                        number=title_eu_toc.number,
+                    )
 
         return new_titles
 
-    repack_title()
+    def repack_pl_mtop():
+        pl_mtop_jp = next((toc_jp for toc_jp in entries_jp if toc_jp.name == "PL_MTOP.PK2"), None)
+        if not pl_mtop_jp:
+            raise RuntimeError("cannot find pl_mtop image in japanese iso")
+
+        pl_mtops_eu = [toc_eu for toc_eu in entries_eu if re.match(r"PL_MTOP_[EFGSI]\.PK2", toc_eu.name)]
+        if len(pl_mtops_eu) != 5:
+            raise RuntimeError("cannot find pl_mtop images in european iso")
+
+        new_pl_mtop_eu: dict[str, ExternalFileEntry] = {}
+
+        with reader_jp.open(pl_mtop_jp.name) as fh:
+            archive = PK2Archive(fh)
+            pl_mtop_jp_data_io = archive[1]
+
+            for pl_mtop_eu in pl_mtops_eu:
+                with reader_eu.open(pl_mtop_eu.name) as fh:
+                    archive = PK2Archive(fh, copy=True)
+                    pl_mtop_eu_data_io = archive[1]
+                    archive[1] = patch_pl_mtop(pl_mtop_eu_data_io, pl_mtop_jp_data_io)
+
+                    new_pl_mtop_eu[pl_mtop_eu.name] = ExternalFileEntry(
+                        file=archive.data,
+                        name=pl_mtop_eu.name,
+                        number=pl_mtop_eu.number,
+                    )
+
+        return new_pl_mtop_eu
+
+    def replace_models_untouched():
+        untouched_model_names = (
+            "M000_MIKU.MDL",
+            "M000_MIKU.MPK",
+            "M000_MIKU.PK2",
+            "M000_SPE1.PK2",
+            "M000_SPE2.PK2",
+            "M000_SPE3.PK2",
+            "REL11_MIKU.TM2",
+            "TX_BTL_RES.PK2",
+        )
+
+        models_jp = {toc_jp.name: toc_jp for toc_jp in entries_jp if toc_jp.name in untouched_model_names}
+        if len(models_jp) != len(untouched_model_names):
+            raise RuntimeError("cannot find all M000 models in japanese iso")
+
+        models_eu = {toc_eu.name: toc_eu for toc_eu in entries_eu if toc_eu.name in untouched_model_names}
+        if len(models_eu) != len(untouched_model_names):
+            raise RuntimeError("cannot find all M000 models in european iso")
+
+        untouched_jp_entries: dict[str, ReaderUndubEntry] = {}
+
+        for model_name in untouched_model_names:
+            model_jp = models_jp[model_name]
+            model_eu = models_eu[model_name]
+            untouched_jp_entries[model_name] = ReaderUndubEntry(
+                reader_jp,
+                model_jp,
+                model_eu.name,
+                model_eu.number,
+                new_size=model_jp.size,
+                japanese=True,
+            )
+
+        return untouched_jp_entries
+
+    def replace_night_titles_jp():
+        msn_titles_jp: dict[str, TOCEntry] = {}
+        for toc_jp in entries_jp:
+            if re.match(r"MSN0[1234]TTL\.PK2", toc_jp.name):
+                name, _, ext = toc_jp.name.partition(".")
+                for lang in ("E", "F", "G", "S", "I"):
+                    eu_name = f"{name}_{lang}.{ext}"
+                    msn_titles_jp[eu_name] = toc_jp
+        if len(msn_titles_jp) != 5 * 4:
+            raise RuntimeError("cannot find night titles images in japanese iso")
+
+        msn_titles_eu = {
+            toc_eu.name: toc_eu for toc_eu in entries_eu if re.match(r"MSN0[1234]TTL_[EFGSI]\.PK2", toc_eu.name)
+        }
+        if len(msn_titles_eu) != 5 * 4:
+            raise RuntimeError("cannot find night titles images in european iso")
+
+        NUM_TIM2_IN_TITLE = 11
+
+        new_msn_titles: dict[str, ExternalFileEntry] = {}
+
+        for msn_title_name in msn_titles_eu:
+            msn_title_jp = msn_titles_jp[msn_title_name]
+            msn_title_eu = msn_titles_eu[msn_title_name]
+            with reader_jp.open(msn_title_jp.name) as fh_jp, reader_eu.open(msn_title_eu.name) as fh_eu:
+                archive_jp = PK2Archive(fh_jp)
+                archive_eu = PK2Archive(fh_eu, copy=True)
+                for i in range(NUM_TIM2_IN_TITLE):
+                    archive_eu[i] = archive_jp[i]
+
+                new_msn_titles[msn_title_eu.name] = ExternalFileEntry(
+                    file=archive_eu.data,
+                    name=msn_title_eu.name,
+                    number=msn_title_eu.number,
+                )
+
+        return new_msn_titles
 
     scene_audio_entries = filter_jp_entries_common(r"SCENE.*\.STR", pad=True)
     sfx_audio_entries = filter_jp_entries_common(r"^((?!SCENE).).*\.STR", pad=True) if replace_sfx else {}
     bd_audio_entries = filter_jp_entries_common(r"^.*\.BD", pad=True) if replace_sfx else {}
     ingame_text_en = filter_ingame_text_en()
     title_entries = repack_title() if replace_title_jp else {}
+
+    jp_model_entries: dict[str, AbstractUndubEntry] = {}
+    if replace_models:
+        jp_model_entries.update(repack_pl_mtop())
+        jp_model_entries.update(replace_models_untouched())
+        jp_model_entries.update(replace_night_titles_jp())
 
     undub_entries: list[AbstractUndubEntry] = []
 
@@ -647,6 +746,9 @@ def merge_iso_img_bd_contents(
 
         elif toc.name in title_entries:
             undub_entries.append(title_entries[toc.name])
+
+        elif toc.name in jp_model_entries:
+            undub_entries.append(jp_model_entries[toc.name])
 
         else:
             undub_entries.append(ReaderUndubEntry(reader_eu, toc, toc.name, toc.number))
