@@ -202,6 +202,7 @@ I'd like to give my thanks:
 - [wagrenier](https://github.com/wagrenier) again, for his excellent python version of
   [PssMux](https://github.com/wagrenier/PssMux), which makes this tool able to automatically
   undub all FMVs in the game!
+- [wagrenier](https://github.com/wagrenier) again, for his help with replacing all game models with the Japanese ones
 - [pgert](https://forums.pcsx2.net/Thread-PCSX2-Widescreen-Game-Patches?pid=240786#pid240786)
   and the whole [PCSX2 community](https://forums.pcsx2.net/) for the great patches that can
   be injected into the game
