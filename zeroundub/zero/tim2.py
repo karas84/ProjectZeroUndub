@@ -1,8 +1,11 @@
 import os
 import io
+import scipy
 import struct
+import numpy as np
 
 from typing import Union, BinaryIO
+from functools import lru_cache
 
 
 class InvalidTim2FormatException(Exception):
@@ -249,32 +252,16 @@ idx_num = (
 
 
 def patch_pl_mtop(tim2_eu_io: BinaryIO, tim2_jp_io: BinaryIO):
-    import scipy
-    import numpy as np
-
-    # import matplotlib.pyplot as plt
-    # from PIL import Image
-    from functools import lru_cache
-
     tim2img_eu = Tim2Image(tim2_eu_io)
     assert tim2img_eu.image and tim2img_eu.image.data and tim2img_eu.image.palette
 
     tim2img_jp = Tim2Image(tim2_jp_io)
     assert tim2img_jp.image and tim2img_jp.image.data and tim2img_jp.image.palette
 
-    # return tim2img_eu.to_bytes()
-
-    # w, h = tim2img_eu.image.width, tim2img_eu.image.height
-
     indices = []
     for i, (s, n) in enumerate(zip(idx_start, idx_num)):
         r = (first_row + i) * tim2img_eu.image.width
         indices.extend(list(range(r + s, r + s + n + 1)))
-
-    # print(len(tim2img_eu.image.data), tim2img_eu.image.data_length, max(indices))
-
-    # print(tim2img_eu.image.bpp, tim2img_eu.image.linear_palette)
-    # print(tim2img_jp.image.bpp, tim2img_jp.image.linear_palette)
 
     p_eu = list(struct.iter_unpack("<4B", tim2img_eu.image.palette))
     p_jp = list(struct.iter_unpack("<4B", tim2img_jp.image.palette))
@@ -290,10 +277,6 @@ def patch_pl_mtop(tim2_eu_io: BinaryIO, tim2_jp_io: BinaryIO):
 
     img_eu = np_take(p_eu, tim2img_eu.image.data)
     img_jp = np_take(p_jp, tim2img_jp.image.data)
-
-    # plt.figure()
-    # plt.imshow(img_eu[..., :3].reshape(h, w, 3))
-    # plt.show(block=False)
 
     def unique_colors(img: np.ndarray):
         return np.unique(img, axis=0)
@@ -318,7 +301,6 @@ def patch_pl_mtop(tim2_eu_io: BinaryIO, tim2_jp_io: BinaryIO):
     assert len(np.unique(img_jp, axis=0)) <= 256
 
     new_colors = unique_colors(img_eu)
-    # print("before:", len(new_colors))
     free_colors = 256 - len(new_colors)
 
     new_color_candidates = sorted(color_errors.items(), key=lambda x: x[1][0], reverse=True)[:free_colors]
@@ -330,12 +312,6 @@ def patch_pl_mtop(tim2_eu_io: BinaryIO, tim2_jp_io: BinaryIO):
     new_palette_eu = unique_colors(img_eu)
 
     assert len(new_palette_eu) == 256
-
-    # Image.fromarray(img_eu[..., :3].reshape(h, w, 3)).save("/home/baecchi/Desktop/miku.png")
-
-    # plt.figure()
-    # plt.imshow(img_eu[..., :3].reshape(h, w, 3))
-    # plt.show()
 
     @lru_cache(maxsize=None)
     def to_gray(color):
@@ -399,17 +375,3 @@ def defilter_palette(palette):
                     i += 1
 
     return new_colors, refilter_map
-
-
-if __name__ == "__main__":
-    for lang in ("E", "F", "G", "I", "S"):
-        tim2_eu_path = f"/home/baecchi/Documents/PyCharm/ProjectZeroUndub/MODELS/PL_MTOP_{lang}/file0001.tm2"
-        tim2_jp_path = "/home/baecchi/Documents/PyCharm/ProjectZeroUndub/MODELS/PL_MTOP/file0001.tm2"
-        with open(tim2_eu_path, mode="rb") as fh_eu, open(tim2_jp_path, mode="rb") as fh_jp:
-            data = patch_pl_mtop(fh_eu, fh_jp)
-
-            p, e = os.path.splitext(tim2_eu_path)
-            new_tim2_eu_path = f"{p}_mod{e}"
-
-            with open(new_tim2_eu_path, mode="wb") as wh:
-                wh.write(data)
