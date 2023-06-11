@@ -1,6 +1,8 @@
 import os
 import re
+import sys
 import inspect
+import argparse
 import threading
 import tkinter as tk
 
@@ -669,6 +671,21 @@ class App(ttk.Frame):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Project Zero Undub GUI")
+
+    parser.add_argument(
+        "-f",
+        "--foreground",
+        dest="foreground",
+        action="store_true",
+        help="do not detach from shell",
+    )
+
+    args = parser.parse_args()
+
+    if not args.foreground and os.fork():
+        sys.exit()
+
     root = tk.Tk()
     root.title("Project Zero Undub by karas84")
 
