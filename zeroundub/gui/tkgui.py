@@ -678,12 +678,12 @@ def main():
         "--foreground",
         dest="foreground",
         action="store_true",
-        help="do not detach from shell",
+        help="do not detach from shell (unix only; on windows always run in foreground)",
     )
 
     args = parser.parse_args()
 
-    if not args.foreground and os.fork():
+    if not args.foreground and hasattr(os, "fork") and os.fork():
         sys.exit()
 
     root = tk.Tk()

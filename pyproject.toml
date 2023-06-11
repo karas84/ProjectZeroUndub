@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 description = "Undub project for Tecmo's Project Zero - the EU version (the first one) for the PS2"
 name = "zeroundub"
-version = "1.3.1"
+version = "1.3.2"
 authors = [{ name = "karas84" }]
 classifiers = [
     "Programming Language :: Python :: 3",
