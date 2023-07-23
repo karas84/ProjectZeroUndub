@@ -589,7 +589,7 @@ class App(ttk.Frame):
     def select_jp_iso(self):
         jp_iso_path = fd.askopenfilename(
             title="Select Japanese ISO",
-            initialdir=os.path.expanduser("~"),
+            initialdir=os.path.dirname(self.eu_iso_path),
             filetypes=self.filetypes,
         )
 
@@ -600,7 +600,7 @@ class App(ttk.Frame):
     def select_undub_iso(self):
         undub_iso_path = fd.asksaveasfilename(
             title="Choose Output Undub ISO",
-            initialdir=os.path.expanduser("~"),
+            initialdir=os.path.dirname(self.eu_iso_path),
             filetypes=self.filetypes,
         )
 
